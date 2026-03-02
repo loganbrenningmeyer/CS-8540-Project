@@ -69,18 +69,10 @@ def save_merged_data(merged_data, output_file):
 
 def main():
 
-    try:
-        data = get_data()
-        if data:
-            print(f"Extraction result for tweet n:\n{json.dumps(data[33], indent=2)}")
-            
-    except FileNotFoundError:
-        print(f"Error: {TWITTER_FILE_PATH} not found.")
+    with open("./out.json", "r") as f:
+        data = json.load(f)
 
-
-    merge_data_result = merge_data(data)
-
-    save_merged_data(merge_data_result, "merged_output.json")
+    print(data.keys())
 
 
 
