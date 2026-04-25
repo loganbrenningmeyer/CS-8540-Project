@@ -1,23 +1,43 @@
-from datasets import load_dataset
+import os
+from datasets import load_dataset, Dataset
 
+out_path = "/home/ubuntu/data/clean_corpus/wikipedia_parquet"
+os.makedirs(out_path, exist_ok=True)
 
-ds = load_dataset("wikimedia/wikipedia", "20231101.en", split="train")
+ds = load_dataset(
+    "wikimedia/wikipedia",
+    "20231101.en",
+    split="train",
+    streaming=True,
+)
 
-print(f"{len(ds)=}")
-print(ds.features)
+stream = ds.shuffle(seed=42, buffer_size=100_000)
 
-total_chars = sum(len(x["text"]) for x in ds.select(range(10000)))
-avg_chars = total_chars / 10000
+batch_size = 10_000
+target_rows = 1_000_000
 
-estimated_total_chars = avg_chars * len(ds)
+buffer = []
+written = 0
+part_id = 0
 
-print("Avg chars:", avg_chars)
-print("Estimated total chars:", estimated_total_chars)
+for sample in stream:
+    buffer.append(sample)
 
-# -------------------------
-# Create subset of dataset Parquet table
-# -------------------------
-n_subset = 500_000
-subset_ds = ds.shuffle(seed=42).select(range(n_subset)).select_columns(["id", "title", "text"])
+    if len(buffer) >= batch_size:
+        Dataset.from_list(buffer).to_parquet(
+            f"{out_path}/part-{part_id:05d}.parquet"
+        )
 
-subset_ds.to_parquet("./spark/data/wikipedia_parquet")
+        written += len(buffer)
+        part_id += 1
+        buffer = []
+
+        print(f"Written {written} rows")
+
+        if written >= target_rows:
+            break
+
+if buffer and written < target_rows:
+    Dataset.from_list(buffer).to_parquet(
+        f"{out_path}/part-{part_id:05d}.parquet"
+    )
