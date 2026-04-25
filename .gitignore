@@ -1,2 +1,7 @@
 out.json
 .DS_Store
+spark/outputs/
+spark/data/*
+!spark/data/lexicons
+.codex
+__pycache__/
