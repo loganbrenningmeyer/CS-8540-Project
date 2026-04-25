@@ -1,0 +1,33 @@
+{
+    "paths": {
+        "reddit_chunks": "/home/logan/data/chunks",
+        "clean_corpus": "/home/logan/projects/CS-8540-Project/spark/data",
+        "out_dir": "/home/logan/projects/CS-8540-Project/spark/outputs"
+    },
+    "params": {
+        "min_token_count": 100,
+        "min_clean_ratio_score": 3.0,
+        "spike_min_clean_ratio_score": 0.0,
+        "min_spike_score": 2.3,
+        "min_spike_periods": 1,
+        "monthly_window_periods": 6,
+        "yearly_window_periods": 3,
+        "min_baseline_periods": 3,
+        "min_period_count": 10,
+        "min_baseline_total_tokens": 25000,
+        "smoothing_alpha": 1.0
+    },
+    "filter": {
+        "min_len": 3,
+        "alphabetic_only": false,
+        "allow_numbers": false,
+        "allow_hyphen": true,
+        "allow_apostrophe": true,
+        "allow_underscore": false
+    },
+    "lexicons": {
+        "profanity": "/home/logan/projects/CS-8540-Project/spark/data/lexicons/profanity.txt",
+        "typos": "/home/logan/projects/CS-8540-Project/spark/data/lexicons/typos.txt",
+        "reddit_jargon": "/home/logan/projects/CS-8540-Project/spark/data/reddit_jargon.txt"
+    }
+}

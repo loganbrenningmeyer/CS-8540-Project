@@ -357,3 +357,97 @@ This table contains all fields from `slang_candidates_clean_ratio_global_parquet
 | `is_slang_candidate_clean_ratio_spiking` | boolean | Always true for rows in this table. |
 
 For storage efficiency, keep these as token-level decision tables and join to `reddit_tokens_parquet` only when building token occurrence annotations.
+
+## Slang Occurrence Tables
+
+Produced by `spark/fabric/slang_occurrences.py`.
+
+These are sparse token-occurrence annotation tables built by joining `reddit_tokens_parquet` to one of the slang candidate tables. They contain one row per matched slang-candidate token occurrence, not one row per candidate token.
+
+Outputs:
+
+```text
+slang_occurrences_clean_ratio_subreddit_parquet
+slang_occurrences_clean_ratio_global_parquet
+slang_occurrences_clean_ratio_spiking_monthly_subreddit_parquet
+slang_occurrences_clean_ratio_spiking_yearly_subreddit_parquet
+slang_occurrences_clean_ratio_spiking_monthly_global_parquet
+slang_occurrences_clean_ratio_spiking_yearly_global_parquet
+```
+
+Shared fields in all outputs:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `post_id` | string | Parent Reddit post/comment id. |
+| `subreddit` | string | Subreddit of the matched token occurrence from `reddit_tokens_parquet`. |
+| `timestamp` | timestamp | Timestamp inherited from the parent post/comment. |
+| `year` | integer | Year inherited from the parent post/comment. |
+| `month` | integer | Month inherited from the parent post/comment. |
+| `week_start_date` | date | Week bucket inherited from the parent post/comment. |
+| `token` | string | Normalized matched token. |
+| `surface` | string | Exact matched token text from the original body. |
+| `token_start` | integer | Character start offset of `surface` in the source text. |
+| `token_end` | integer | Character end offset of `surface` in the source text. |
+| `is_slang_candidate` | boolean | Always `true` for rows in these outputs. |
+| `candidate_type` | string | Candidate family used to label the occurrence: `clean_ratio` or `spiking`. |
+| `candidate_mode` | string | Candidate scope used to build the join: `subreddit` or `global`. |
+| `spike_time_grain` | string | `monthly` or `yearly` for spiking outputs; null for clean-ratio-only outputs. |
+| `clean_ratio_score` | double | Clean-ratio score copied from the matched candidate row. |
+| `count_reddit_all_time` | long | All-time Reddit token count copied from the matched candidate row. |
+| `total_tokens_all_time` | long | All-time unfiltered Reddit token count copied from the matched candidate row. |
+| `p_reddit_all_time` | double | All-time Reddit probability copied from the matched candidate row. |
+| `p_clean` | double | Clean-corpus probability copied from the matched candidate row. |
+
+Additional fields in spiking outputs only:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `max_spike_score` | double | Strongest spike score observed for the matched candidate token. |
+| `num_spike_periods` | long | Number of spike periods observed for the matched candidate token. |
+
+Optional field when `--include-full-text` is used:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `full_text` | string | Full post/comment body joined from `reddit_clean_posts_parquet`. |
+
+Notes:
+
+- In `--mode subreddit`, occurrences are matched by `(subreddit, token)`.
+- In `--mode global`, occurrences are matched by `(token)` only, but the output still preserves the occurrence's original `subreddit`.
+- The default output is intentionally sparse and omits full text for storage efficiency.
+
+## BERT Input Tables
+
+Produced by `spark/fabric/bert_inputs.py`.
+
+These are BERT-oriented occurrence tables built from `reddit_tokens_parquet` and a slang candidate table. They keep one row per matched slang-candidate token occurrence and include full post text by default so downstream Ray jobs can build context windows.
+
+Outputs:
+
+```text
+bert_inputs_clean_ratio_subreddit_parquet
+bert_inputs_clean_ratio_global_parquet
+bert_inputs_clean_ratio_spiking_monthly_subreddit_parquet
+bert_inputs_clean_ratio_spiking_yearly_subreddit_parquet
+bert_inputs_clean_ratio_spiking_monthly_global_parquet
+bert_inputs_clean_ratio_spiking_yearly_global_parquet
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `post_id` | string | Parent Reddit post/comment id. |
+| `subreddit` | string | Subreddit of the matched token occurrence. |
+| `timestamp` | timestamp | Timestamp inherited from the parent post/comment. |
+| `token` | string | Normalized candidate token passed to BERT. |
+| `token_start` | integer | Character start offset of the token in `full_text`. |
+| `token_end` | integer | Character end offset of the token in `full_text`. |
+| `full_text` | string | Full Reddit post/comment body used as the source context. |
+| `is_slang_candidate` | boolean | Always `true` for rows in these outputs. |
+
+Notes:
+
+- In `--mode subreddit`, rows are matched by `(subreddit, token)`.
+- In `--mode global`, rows are matched by `(token)` only.
+- This table is narrower than `slang_occurrences_*` and is intended for downstream BERT/Ray preprocessing.
