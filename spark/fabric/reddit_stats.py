@@ -61,6 +61,29 @@ def join_counts_and_totals(
     )
 
 
+def rollup_counts_and_totals(
+    token_counts,
+    bucket_totals,
+    group_cols,
+):
+    """
+    
+    """
+    rolled_token_counts = (
+        token_counts
+        .groupBy(*(group_cols + ["token"]))
+        .agg(spark_sum("count_reddit").alias("count_reddit"))
+    )
+
+    rolled_bucket_totals = (
+        bucket_totals
+        .groupBy(*group_cols)
+        .agg(spark_sum("total_tokens").alias("total_tokens"))
+    )
+
+    return rolled_token_counts, rolled_bucket_totals
+
+
 def rollup_to_global(
     token_counts,
     bucket_totals,
@@ -160,7 +183,7 @@ filtered = (
 )
 
 # -------------------------
-# Compute token probs by month / year / all time (by subreddit and globally)
+# Compute monthly subreddit counts/totals from raw tokens once
 # -------------------------
 monthly_sub_counts, monthly_sub_totals = build_counts_and_totals(
     filtered,
@@ -170,22 +193,28 @@ monthly_sub_counts, monthly_sub_totals = build_counts_and_totals(
 monthly_sub_counts = monthly_sub_counts.persist(StorageLevel.DISK_ONLY)
 monthly_sub_totals = monthly_sub_totals.persist(StorageLevel.DISK_ONLY)
 
-yearly_sub_counts, yearly_sub_totals = build_counts_and_totals(
-    filtered,
-    tokens,
+# -------------------------
+# Roll yearly/all-time subreddit counts/totals up from smaller aggregates
+# -------------------------
+yearly_sub_counts, yearly_sub_totals = rollup_counts_and_totals(
+    monthly_sub_counts,
+    monthly_sub_totals,
     ["subreddit", "year"]
 )
 yearly_sub_counts = yearly_sub_counts.persist(StorageLevel.DISK_ONLY)
 yearly_sub_totals = yearly_sub_totals.persist(StorageLevel.DISK_ONLY)
 
-all_time_sub_counts, all_time_sub_totals = build_counts_and_totals(
-    filtered,
-    tokens,
+all_time_sub_counts, all_time_sub_totals = rollup_counts_and_totals(
+    yearly_sub_counts,
+    yearly_sub_totals,
     ["subreddit"]
 )
 all_time_sub_counts = all_time_sub_counts.persist(StorageLevel.DISK_ONLY)
 all_time_sub_totals = all_time_sub_totals.persist(StorageLevel.DISK_ONLY)
 
+# -------------------------
+# Compute token probs by month / year / all time (by subreddit and globally)
+# -------------------------
 monthly_subreddit = join_counts_and_totals(
     monthly_sub_counts,
     monthly_sub_totals,
