@@ -2,11 +2,10 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
     from_unixtime,
-    to_timestamp,
-    to_date,
+    floor,
+    lit,
     year,
     month,
-    expr,
 )
 from pyspark.sql.types import (
     StructType,
@@ -53,6 +52,30 @@ out_dir = config["paths"]["out_dir"]
 
 clean_posts_parquet_dir = join_path(out_dir, "reddit_clean_posts_parquet")
 
+# -------------------------
+# Week start calculation constants
+# -------------------------
+# -- Spark 2.2 on Fabric is missing newer date helpers like date_trunc and
+#    dayofweek. Compute Monday week start directly from Unix seconds instead.
+#
+# -- Unix epoch 0 is Thursday 1970-01-01.
+# -- Monday 1970-01-05 is 345600 seconds after epoch.
+# -- For Reddit timestamps, this gives the Monday 00:00:00 UTC bucket:
+#       floor((created_utc - monday_offset) / seconds_per_week)
+#       * seconds_per_week + monday_offset
+# -------------------------
+SECONDS_PER_WEEK = 7 * 24 * 60 * 60
+MONDAY_EPOCH_OFFSET = 4 * 24 * 60 * 60
+
+monday_start_epoch = (
+    floor(
+        (col("created_utc") - lit(MONDAY_EPOCH_OFFSET))
+        / lit(SECONDS_PER_WEEK)
+    )
+    * lit(SECONDS_PER_WEEK)
+    + lit(MONDAY_EPOCH_OFFSET)
+)
+
 clean_posts = (
     df
     .select(
@@ -69,18 +92,10 @@ clean_posts = (
     .filter(col("body").isNotNull())
     .filter(~col("body").isin("[deleted]", "[removed]"))    # no [deleted]/[removed] text
     # -- Time columns
-    .withColumn("timestamp", to_timestamp(from_unixtime(col("created_utc")))) 
+    .withColumn("timestamp", from_unixtime(col("created_utc")).cast("timestamp"))
     .withColumn("year", year(col("timestamp")))
     .withColumn("month", month(col("timestamp")))
-    # -- Spark 2.2 does not have pyspark.sql.functions.date_trunc.
-    #    Compute Monday week start with SQL functions that are available on
-    #    older Spark versions:
-    #       dayofweek: Sunday=1, Monday=2, ..., Saturday=7
-    #       pmod(dayofweek + 5, 7): days since Monday
-    .withColumn(
-        "week_start_date",
-        expr("date_sub(to_date(timestamp), pmod(dayofweek(timestamp) + 5, 7))"),
-    )
+    .withColumn("week_start_date", from_unixtime(monday_start_epoch).cast("date"))
     # -- Final schema
     .select(
         "post_id",
