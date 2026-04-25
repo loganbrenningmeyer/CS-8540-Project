@@ -1,17 +1,16 @@
-from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, length
 
 
 def filter_candidate_tokens(
-    df: DataFrame,
-    token_col: str = "token",
-    min_len: int = 3,
-    alphabetic_only: bool = False,
-    allow_hyphen: bool = True,
-    allow_apostrophe: bool = True,
-    allow_underscore: bool = False,
-    allow_numbers: bool = True,
-) -> DataFrame:
+    df,
+    token_col="token",
+    min_len=3,
+    alphabetic_only=False,
+    allow_hyphen=True,
+    allow_apostrophe=True,
+    allow_underscore=False,
+    allow_numbers=True,
+):
     out = df.filter(col(token_col).isNotNull())
 
     # Length filter
@@ -46,5 +45,4 @@ def filter_candidate_tokens(
     out = out.filter(col(token_col).rlike(pattern))
 
     return out
-
 

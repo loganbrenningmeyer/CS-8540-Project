@@ -1,4 +1,4 @@
-def join_path(base: str, *parts: str) -> str:
+def join_path(base, *parts):
     """
     Join HDFS/Lakehouse-style paths without using pathlib.
 

@@ -1,4 +1,4 @@
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import count, col, lit
 
 from utils.filter_tokens import filter_candidate_tokens
@@ -13,10 +13,10 @@ config = load_config(args.config)
 
 
 def build_stats(
-    tokens_for_counts: DataFrame,
-    tokens_for_totals: DataFrame,
-    group_cols: list[str],
-) -> DataFrame:
+    tokens_for_counts,
+    tokens_for_totals,
+    group_cols,
+):
     """
     
     """

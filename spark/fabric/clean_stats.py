@@ -34,7 +34,7 @@ config = load_config(args.config)
 # -------------------------
 TOKEN_RE = re.compile(r"\b[\w]+(?:[-'][\w]+)*\b", re.UNICODE)
 
-def tokenize_text(text: str) -> list[str]:
+def tokenize_text(text):
     if text is None:
         return []
 

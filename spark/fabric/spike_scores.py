@@ -1,6 +1,6 @@
 import argparse
 
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
     concat_ws,
@@ -37,7 +37,7 @@ MIN_BASELINE_TOTAL_TOKENS = 10_000
 SMOOTHING_ALPHA = 1.0
 
 
-def add_period_id(df: DataFrame, time_grain: str) -> DataFrame:
+def add_period_id(df, time_grain):
     """
     Add a stable string period_id for counting and output.
 
@@ -61,18 +61,18 @@ def add_period_id(df: DataFrame, time_grain: str) -> DataFrame:
 
 
 def build_spike_scores(
-    stats: DataFrame,
-    candidate_tokens: DataFrame,
-    candidate_key_cols: list[str],
-    entity_cols: list[str],
-    time_cols: list[str],
-    time_grain: str,
-    n_window_periods: int,
-    min_baseline_periods: int,
-    min_period_count: int,
-    min_baseline_total_tokens: int,
-    smoothing_alpha: float,
-) -> DataFrame:
+    stats,
+    candidate_tokens,
+    candidate_key_cols,
+    entity_cols,
+    time_cols,
+    time_grain,
+    n_window_periods,
+    min_baseline_periods,
+    min_period_count,
+    min_baseline_total_tokens,
+    smoothing_alpha,
+):
     """
     Compute smoothed spike scores for one time grain.
 
@@ -212,9 +212,9 @@ def build_spike_scores(
 
 
 def write_spike_scores(
-    spike_scores: DataFrame,
-    parquet_dir: str,
-) -> None:
+    spike_scores,
+    parquet_dir,
+):
     spike_scores.write.mode("overwrite").parquet(parquet_dir)
 
     spike_scores.orderBy(col("spike_score").desc()).show(50, truncate=False)

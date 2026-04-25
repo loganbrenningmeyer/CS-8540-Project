@@ -6,7 +6,7 @@ from pyspark.sql.functions import (
     to_date,
     year,
     month,
-    date_trunc,
+    expr,
 )
 from pyspark.sql.types import (
     StructType,
@@ -72,7 +72,15 @@ clean_posts = (
     .withColumn("timestamp", to_timestamp(from_unixtime(col("created_utc")))) 
     .withColumn("year", year(col("timestamp")))
     .withColumn("month", month(col("timestamp")))
-    .withColumn("week_start_date", to_date(date_trunc("week", col("timestamp"))))
+    # -- Spark 2.2 does not have pyspark.sql.functions.date_trunc.
+    #    Compute Monday week start with SQL functions that are available on
+    #    older Spark versions:
+    #       dayofweek: Sunday=1, Monday=2, ..., Saturday=7
+    #       pmod(dayofweek + 5, 7): days since Monday
+    .withColumn(
+        "week_start_date",
+        expr("date_sub(to_date(timestamp), pmod(dayofweek(timestamp) + 5, 7))"),
+    )
     # -- Final schema
     .select(
         "post_id",

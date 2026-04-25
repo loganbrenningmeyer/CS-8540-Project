@@ -15,7 +15,7 @@ from utils.config import load_config  # noqa: E402
 from utils.paths import join_path  # noqa: E402
 
 
-def base_parser(description: str) -> argparse.ArgumentParser:
+def base_parser(description):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--config", required=True)
     parser.add_argument("--limit", type=int, default=50)
@@ -23,7 +23,7 @@ def base_parser(description: str) -> argparse.ArgumentParser:
     return parser
 
 
-def get_spark(app_name: str) -> SparkSession:
+def get_spark(app_name):
     return (
         SparkSession.builder
         .appName(app_name)
@@ -31,18 +31,18 @@ def get_spark(app_name: str) -> SparkSession:
     )
 
 
-def output_path(config_path: str, table_name: str) -> str:
+def output_path(config_path, table_name):
     config = load_config(config_path)
     return join_path(config["paths"]["out_dir"], table_name)
 
 
 def show_table(
-    spark: SparkSession,
-    path: str,
-    limit: int,
-    truncate: str,
-    sort_cols: list[tuple[str, bool]] | None = None,
-) -> None:
+    spark,
+    path,
+    limit,
+    truncate,
+    sort_cols=None,
+):
     df = spark.read.parquet(path)
 
     if sort_cols:

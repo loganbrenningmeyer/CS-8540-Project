@@ -1,7 +1,7 @@
 from preview_utils import base_parser, get_spark, output_path, show_table
 
 
-def table_name(mode: str, grain: str) -> str:
+def table_name(mode, grain):
     return f"reddit_stats_{grain}_{mode}_parquet"
 
 

@@ -47,7 +47,7 @@ token_schema = ArrayType(
 )
 
 
-def tokenize_with_offsets(text: str) -> list[dict]:
+def tokenize_with_offsets(text):
     """
     
     """
