@@ -96,15 +96,10 @@ def main():
         spike_scores_dir = join_path(out_dir, f"spike_scores_{args.spike_time_grain}_global_parquet")
 
         clean_ratio_candidates_parquet_dir = join_path(out_dir, "slang_candidates_clean_ratio_global_parquet")
-        clean_ratio_candidates_csv_dir = join_path(out_dir, "slang_candidates_clean_ratio_global_csv")
 
         clean_ratio_spiking_candidates_parquet_dir = join_path(
             out_dir,
             f"slang_candidates_clean_ratio_spiking_{args.spike_time_grain}_global_parquet",
-        )
-        clean_ratio_spiking_candidates_csv_dir = join_path(
-            out_dir,
-            f"slang_candidates_clean_ratio_spiking_{args.spike_time_grain}_global_csv",
         )
 
         candidate_key_cols = ["corpus", "token"]
@@ -114,15 +109,10 @@ def main():
         spike_scores_dir = join_path(out_dir, f"spike_scores_{args.spike_time_grain}_subreddit_parquet")
 
         clean_ratio_candidates_parquet_dir = join_path(out_dir, "slang_candidates_clean_ratio_subreddit_parquet")
-        clean_ratio_candidates_csv_dir = join_path(out_dir, "slang_candidates_clean_ratio_subreddit_csv")
 
         clean_ratio_spiking_candidates_parquet_dir = join_path(
             out_dir,
             f"slang_candidates_clean_ratio_spiking_{args.spike_time_grain}_subreddit_parquet",
-        )
-        clean_ratio_spiking_candidates_csv_dir = join_path(
-            out_dir,
-            f"slang_candidates_clean_ratio_spiking_{args.spike_time_grain}_subreddit_csv",
         )
 
         candidate_key_cols = ["subreddit", "token"]
@@ -265,33 +255,11 @@ def main():
         clean_ratio_candidates_parquet_dir
     )
 
-    (
-        clean_ratio_candidates
-        .orderBy(col("clean_ratio_score").desc())
-        .limit(1000)
-        .coalesce(1)
-        .write
-        .mode("overwrite")
-        .option("header", "true")
-        .csv(clean_ratio_candidates_csv_dir)
-    )
-
     # -------------------------
     # Write clean-ratio + spiking slang candidates
     # -------------------------
     clean_ratio_spiking_candidates.write.mode("overwrite").parquet(
         clean_ratio_spiking_candidates_parquet_dir
-    )
-
-    (
-        clean_ratio_spiking_candidates
-        .orderBy(col("max_spike_score").desc(), col("clean_ratio_score").desc())
-        .limit(1000)
-        .coalesce(1)
-        .write
-        .mode("overwrite")
-        .option("header", "true")
-        .csv(clean_ratio_spiking_candidates_csv_dir)
     )
 
     # -------------------------

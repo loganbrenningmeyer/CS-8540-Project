@@ -119,7 +119,7 @@ all_time_global = build_stats(
 )
 
 # -------------------------
-# Write reddit_stats to Parquet table / csv
+# Write reddit_stats to Parquet tables
 # -------------------------
 monthly_subreddit.write.mode("overwrite").parquet(join_path(out_dir, "reddit_stats_monthly_subreddit_parquet"))
 yearly_subreddit.write.mode("overwrite").parquet(join_path(out_dir, "reddit_stats_yearly_subreddit_parquet"))
@@ -127,60 +127,5 @@ all_time_subreddit.write.mode("overwrite").parquet(join_path(out_dir, "reddit_st
 monthly_global.write.mode("overwrite").parquet(join_path(out_dir, "reddit_stats_monthly_global_parquet"))
 yearly_global.write.mode("overwrite").parquet(join_path(out_dir, "reddit_stats_yearly_global_parquet"))
 all_time_global.write.mode("overwrite").parquet(join_path(out_dir, "reddit_stats_all_time_global_parquet"))
-
-(
-    monthly_subreddit
-    .limit(100)
-    .coalesce(1)
-    .write
-    .mode("overwrite")
-    .option("header", "true")
-    .csv(join_path(out_dir, "reddit_stats_monthly_subreddit_csv"))
-)
-(
-    yearly_subreddit
-    .limit(100)
-    .coalesce(1)
-    .write
-    .mode("overwrite")
-    .option("header", "true")
-    .csv(join_path(out_dir, "reddit_stats_yearly_subreddit_csv"))
-)
-(
-    all_time_subreddit
-    .limit(100)
-    .coalesce(1)
-    .write
-    .mode("overwrite")
-    .option("header", "true")
-    .csv(join_path(out_dir, "reddit_stats_all_time_subreddit_csv"))
-)
-(
-    monthly_global
-    .limit(100)
-    .coalesce(1)
-    .write
-    .mode("overwrite")
-    .option("header", "true")
-    .csv(join_path(out_dir, "reddit_stats_monthly_global_csv"))
-)
-(
-    yearly_global
-    .limit(100)
-    .coalesce(1)
-    .write
-    .mode("overwrite")
-    .option("header", "true")
-    .csv(join_path(out_dir, "reddit_stats_yearly_global_csv"))
-)
-(
-    all_time_global
-    .limit(100)
-    .coalesce(1)
-    .write
-    .mode("overwrite")
-    .option("header", "true")
-    .csv(join_path(out_dir, "reddit_stats_all_time_global_csv"))
-)
 
 spark.stop()

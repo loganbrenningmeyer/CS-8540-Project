@@ -214,20 +214,8 @@ def build_spike_scores(
 def write_spike_scores(
     spike_scores: DataFrame,
     parquet_dir: str,
-    csv_dir: str,
 ) -> None:
     spike_scores.write.mode("overwrite").parquet(parquet_dir)
-
-    (
-        spike_scores
-        .orderBy(col("spike_score").desc())
-        .limit(100)
-        .coalesce(1)
-        .write
-        .mode("overwrite")
-        .option("header", "true")
-        .csv(csv_dir)
-    )
 
     spike_scores.orderBy(col("spike_score").desc()).show(50, truncate=False)
 
@@ -370,7 +358,6 @@ def main():
         write_spike_scores(
             monthly_spike_scores,
             join_path(out_dir, f"spike_scores_monthly_{output_suffix}_parquet"),
-            join_path(out_dir, f"spike_scores_monthly_{output_suffix}_csv"),
         )
 
     if args.time_grain in ("yearly", "both"):
@@ -392,7 +379,6 @@ def main():
         write_spike_scores(
             yearly_spike_scores,
             join_path(out_dir, f"spike_scores_yearly_{output_suffix}_parquet"),
-            join_path(out_dir, f"spike_scores_yearly_{output_suffix}_csv"),
         )
 
     spark.stop()

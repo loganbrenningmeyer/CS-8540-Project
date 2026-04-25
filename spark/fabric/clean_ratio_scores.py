@@ -31,11 +31,9 @@ def main():
     if args.mode == "global":
         reddit_stats_all_time_parquet_dir = join_path(out_dir, "reddit_stats_all_time_global_parquet")
         clean_ratio_scores_parquet_dir = join_path(out_dir, "clean_ratio_scores_global_parquet")
-        clean_ratio_scores_csv_dir = join_path(out_dir, "clean_ratio_scores_global_csv")
     else:
         reddit_stats_all_time_parquet_dir = join_path(out_dir, "reddit_stats_all_time_subreddit_parquet")
         clean_ratio_scores_parquet_dir = join_path(out_dir, "clean_ratio_scores_subreddit_parquet")
-        clean_ratio_scores_csv_dir = join_path(out_dir, "clean_ratio_scores_subreddit_csv")
 
     reddit_stats_all_time = spark.read.parquet(reddit_stats_all_time_parquet_dir)
     clean_stats = spark.read.parquet(clean_stats_parquet_dir)
@@ -57,20 +55,9 @@ def main():
     )
 
     # -------------------------
-    # Save clean_ratio_scores to Parquet / CSV preview
+    # Save clean_ratio_scores to Parquet
     # -------------------------
     candidates.write.mode("overwrite").parquet(clean_ratio_scores_parquet_dir)
-
-    (
-        candidates
-        .orderBy(col("clean_ratio_score").desc())
-        .limit(100)
-        .coalesce(1)
-        .write
-        .mode("overwrite")
-        .option("header", "true")
-        .csv(clean_ratio_scores_csv_dir)
-    )
 
     candidates.orderBy(col("clean_ratio_score").desc()).show(50, truncate=False)
 
