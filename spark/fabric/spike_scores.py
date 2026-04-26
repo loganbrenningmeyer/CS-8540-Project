@@ -3,6 +3,7 @@ import argparse
 from pyspark import StorageLevel
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
+    broadcast,
     col,
     concat_ws,
     lpad,
@@ -16,7 +17,6 @@ from pyspark.sql.window import Window
 
 from utils.config import load_config
 from utils.paths import join_path
-
 
 # -------------------------
 # Spike configuration defaults
@@ -105,9 +105,12 @@ def build_spike_scores(
     #       count_reddit = 0
     #       total_tokens = real subreddit/corpus-period total
     # -------------------------
-    periods = stats.select(*time_cols).distinct()
+    # The number of monthly/yearly periods is tiny relative to candidate
+    # tokens. Broadcasting avoids a partition blow-up from the cross join,
+    # which otherwise can multiply partition counts (e.g. 600 x 600).
+    periods = stats.select(*time_cols).distinct().coalesce(1)
     grid_entities = candidate_tokens.select(*candidate_key_cols).distinct()
-    grid = grid_entities.crossJoin(periods)
+    grid = grid_entities.crossJoin(broadcast(periods))
 
     # -------------------------
     # Bucket totals by subreddit/corpus period
@@ -214,7 +217,13 @@ def write_spike_scores(
     spike_scores,
     parquet_dir,
 ):
-    spike_scores.write.mode("overwrite").parquet(parquet_dir)
+    (   
+        spike_scores
+        .coalesce(600)
+        .write
+        .mode("overwrite")
+        .parquet(parquet_dir)
+    )
 
 
 def main():

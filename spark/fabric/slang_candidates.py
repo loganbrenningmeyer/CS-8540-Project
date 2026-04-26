@@ -203,6 +203,21 @@ def main():
     )
 
     # -------------------------
+    # Filter out repetition-heavy gibberish
+    # -------------------------
+    # Examples:
+    #   oooooooo
+    #   lololololol
+    #   bzzzzbzzzzzbzzzz
+    #
+    # Keep this conservative so expressive elongations like "noooo" or
+    # "lmaoooo" are less likely to be removed.
+    # -------------------------
+    clean_ratio_candidates = clean_ratio_candidates.filter(
+        ~col("token").rlike(r"(.)\1{4,}|^(.{1,3})\1{3,}$")
+    )
+
+    # -------------------------
     # Summarize spike evidence by candidate token
     # -------------------------
     # -- spike_scores is period-level:

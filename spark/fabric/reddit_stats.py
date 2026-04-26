@@ -156,7 +156,7 @@ spark = (
 # -------------------------
 out_dir = config["paths"]["out_dir"]
 
-tokens_parquet_dir = join_path(out_dir, "reddit_tokens_parquet")
+tokens_parquet_dir = join_path(out_dir, "reddit_tokens_subset_10pct_parquet")
 
 tokens = (
     spark.read.parquet(tokens_parquet_dir)

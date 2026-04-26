@@ -5,3 +5,4 @@ spark/data/*
 !spark/data/lexicons
 .codex
 __pycache__/
+plots/
