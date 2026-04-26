@@ -1,5 +1,6 @@
 import re
 
+from pyspark import StorageLevel
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, explode, udf, count, sum as spark_sum
 from pyspark.sql.types import (
@@ -58,7 +59,7 @@ out_dir = config["paths"]["out_dir"]
 clean_docs_parquet_dir = join_path(clean_corpus_dir, "wikipedia_parquet")
 clean_stats_parquet_dir = join_path(out_dir, "clean_stats_parquet")
 
-docs = spark.read.parquet(clean_docs_parquet_dir)
+docs = spark.read.parquet(clean_docs_parquet_dir).select("text")
 
 # -------------------------
 # Create clean tokens Spark DataFrame / count tokens
@@ -73,6 +74,7 @@ token_counts = (
     tokens
     .groupBy("token")
     .agg(count("*").alias("count_clean"))
+    .persist(StorageLevel.DISK_ONLY)
 )
 
 # -------------------------

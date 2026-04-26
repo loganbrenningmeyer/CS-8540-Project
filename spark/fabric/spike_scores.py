@@ -1,5 +1,6 @@
 import argparse
 
+from pyspark import StorageLevel
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -84,8 +85,6 @@ def build_spike_scores(
     The output keeps only rows where the token appears in the current period
     with enough support and the previous-period baseline has enough evidence.
     """
-    stats = add_period_id(stats, time_grain)
-
     token_period_cols = [*candidate_key_cols, *time_cols]
     bucket_cols = [*entity_cols, *time_cols]
 
@@ -217,8 +216,6 @@ def write_spike_scores(
 ):
     spike_scores.write.mode("overwrite").parquet(parquet_dir)
 
-    spike_scores.orderBy(col("spike_score").desc()).show(50, truncate=False)
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -337,10 +334,20 @@ def main():
             "clean_ratio_score",
         )
         .distinct()
+        .persist(StorageLevel.DISK_ONLY)
     )
 
     if args.time_grain in ("monthly", "both"):
-        monthly_stats = spark.read.parquet(monthly_stats_dir)
+        monthly_stats = (
+            spark.read.parquet(monthly_stats_dir)
+            .select(
+                *candidate_key_cols,
+                "year",
+                "month",
+                "count_reddit",
+                "total_tokens",
+            )
+        )
         monthly_spike_scores = build_spike_scores(
             stats=monthly_stats,
             candidate_tokens=candidate_tokens,
@@ -361,7 +368,15 @@ def main():
         )
 
     if args.time_grain in ("yearly", "both"):
-        yearly_stats = spark.read.parquet(yearly_stats_dir)
+        yearly_stats = (
+            spark.read.parquet(yearly_stats_dir)
+            .select(
+                *candidate_key_cols,
+                "year",
+                "count_reddit",
+                "total_tokens",
+            )
+        )
         yearly_spike_scores = build_spike_scores(
             stats=yearly_stats,
             candidate_tokens=candidate_tokens,
@@ -380,6 +395,8 @@ def main():
             yearly_spike_scores,
             join_path(out_dir, f"spike_scores_yearly_{output_suffix}_parquet"),
         )
+
+    candidate_tokens.unpersist()
 
     spark.stop()
 
