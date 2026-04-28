@@ -36,7 +36,7 @@ from utils.paths import join_path
 # -------------------------
 MIN_TOKEN_COUNT = 100
 MIN_CLEAN_RATIO_SCORE = 3.0
-MIN_SPIKE_SCORE = 2.3
+MIN_SPIKE_SCORE = 1.6
 MIN_SPIKE_PERIODS = 1
 
 
@@ -181,6 +181,14 @@ def main():
         .withColumn("is_reddit_jargon", lit(True))
     )
 
+    subreddits = (
+        spark.read.text(lexicons.get("subreddits", join_path(clean_corpus_dir, "lexicons/subreddits.txt")))
+        .select(col("value").alias("token"))
+        .filter(col("token") != "")
+        .distinct()
+        .withColumn("is_subreddit", lit(True))
+    )
+
     clean_ratio_candidates = (
         clean_ratio_candidates
         .join(profanity, on="token", how="left")
@@ -200,6 +208,13 @@ def main():
         .join(reddit_jargon, on="token", how="left")
         .withColumn("is_reddit_jargon", coalesce(col("is_reddit_jargon"), lit(False)))
         .filter(~col("is_reddit_jargon"))
+    )
+
+    clean_ratio_candidates = (
+        clean_ratio_candidates
+        .join(subreddits, on="token", how="left")
+        .withColumn("is_subreddit", coalesce(col("is_subreddit"), lit(False)))
+        .filter(~col("is_subreddit"))
     )
 
     # -------------------------

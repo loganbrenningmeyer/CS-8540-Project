@@ -29,19 +29,31 @@ How it is built:
 - take distinct `post_id` values from `reddit_tokens_subset_10pct_parquet`
 - inner join those ids to `reddit_clean_posts_parquet`
 
-Guaranteed fields:
+Expected fields:
+
+This subset table is built by taking distinct `post_id` values from
+`reddit_tokens_subset_10pct_parquet` and inner joining them to
+`reddit_clean_posts_parquet`, so it should preserve the same row-level schema as
+`reddit_clean_posts_parquet`.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `post_id` | string | Reddit post/comment id used as the primary join key. |
+| `post_id` | string | Reddit item id used as the primary join key. |
+| `subreddit` | string | Subreddit the post/comment came from. |
+| `timestamp` | timestamp | UTC timestamp derived from the original `created_utc`. |
+| `year` | integer | Calendar year extracted from `timestamp`. |
+| `month` | integer | Calendar month extracted from `timestamp`. |
+| `week_start_date` | date | Monday start date of the weekly time bucket. |
+| `body` | string | Full cleaned post/comment text. |
+| `score` | integer | Reddit score cast to integer. |
 
-Expected additional fields:
+Practical notes:
 
-- whatever columns already exist in `reddit_clean_posts_parquet`
-- in practice this should include at least:
-  - `subreddit`
-  - `timestamp`
-  - `body`
+- `body` is the column that should be renamed to `full_text` when constructing
+  BERT-input rows.
+- `post_id` is the stable key used to join this table to both
+  `reddit_tokens_subset_10pct_parquet` and
+  `slang_occurrences_clean_ratio_spiking_combined_subreddit_parquet`.
 
 Storage role:
 

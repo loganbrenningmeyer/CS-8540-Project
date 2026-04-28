@@ -6,3 +6,5 @@ spark/data/*
 .codex
 __pycache__/
 plots/
+*.csv
+*.tar

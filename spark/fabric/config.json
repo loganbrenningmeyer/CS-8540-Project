@@ -17,6 +17,20 @@
         "min_baseline_total_tokens": 25000,
         "smoothing_alpha": 1.0
     },
+    "score_params": {
+        "clean_ratio_c": 3.0,
+        "clean_ratio_s": 0.4,
+        "spike_monthly_c": 2.3,
+        "spike_monthly_s": 0.4,
+        "spike_yearly_c": 2.3,
+        "spike_yearly_s": 0.4,
+        "reliability_log": 101,
+        "spike_boost_weight": 0.6,
+        "power_transform": 0.4,
+        "rank_top_k": 5000,
+        "rank_top_k_floor": 0.8,
+        "tail_decay": 0.000058
+    },
     "filter": {
         "min_len": 3,
         "alphabetic_only": false,
@@ -28,6 +42,7 @@
     "lexicons": {
         "profanity": "hdfs:///data/lexicons/profanity.txt",
         "typos": "hdfs:///data/lexicons/typos.txt",
-        "reddit_jargon": "hdfs:///data/lexicons/reddit_jargon.txt"
+        "reddit_jargon": "hdfs:///data/lexicons/reddit_jargon.txt",
+        "subreddits": "hdfs:///data/lexicons/subreddits.txt"
     }
 }
